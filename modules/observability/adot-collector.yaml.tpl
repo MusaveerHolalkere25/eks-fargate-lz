@@ -1,6 +1,6 @@
 # Based on the AWS Distro for OpenTelemetry reference configuration for Container Insights on EKS Fargate:
 # https://aws-otel.github.io/docs/getting-started/container-insights/eks-fargate
-# This file is a Terraform template: $${...} is rendered as a literal ${...} for the collector.
+# Note: this is a Terraform template. Double-dollar escapes are rendered as single-dollar text for the collector.
 receivers:
   prometheus:
     config:
