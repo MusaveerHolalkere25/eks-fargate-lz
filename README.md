@@ -1,6 +1,6 @@
-# eks-fargate-landing-zone
+# eks-fargate-lz
 
-[![terraform](https://github.com/MusaveerHolalkere25/eks-fargate-landing-zone/actions/workflows/terraform.yml/badge.svg)](https://github.com/MusaveerHolalkere25/eks-fargate-landing-zone/actions/workflows/terraform.yml)
+[![terraform](https://github.com/MusaveerHolalkere25/eks-fargate-lz/actions/workflows/terraform.yml/badge.svg)](https://github.com/MusaveerHolalkere25/eks-fargate-lz/actions/workflows/terraform.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 A Terraform reference for a **multi-environment Amazon EKS platform on AWS Fargate**: VPC, serverless Kubernetes with no nodes to patch, IAM roles for service accounts (IRSA), and observability with Container Insights and Amazon Managed Grafana.
