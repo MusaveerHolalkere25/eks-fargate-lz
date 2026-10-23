@@ -1,0 +1,3 @@
+# Copy to terraform.tfvars (git-ignored), or export TF_VAR_grafana_endpoint / TF_VAR_grafana_auth.
+# Never commit real tokens.
+grafana_endpoint = "g-xxxxxxxxxx.grafana-workspace.eu-west-1.amazonaws.com"

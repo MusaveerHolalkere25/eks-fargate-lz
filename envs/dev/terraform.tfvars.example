@@ -1,0 +1,6 @@
+# Copy to terraform.tfvars (git-ignored) and edit.
+api_access_cidrs = ["203.0.113.10/32"] # your public IP
+
+# IAM Identity Center user ID(s) that should be able to log in to Grafana.
+# Find them in the IAM Identity Center console (Users > your user > User ID).
+grafana_admin_user_ids = ["00000000-0000-0000-0000-000000000000"]
