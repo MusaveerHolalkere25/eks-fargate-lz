@@ -18,8 +18,9 @@ A Terraform reference for a **multi-environment Amazon EKS platform on AWS Farga
 | `modules/irsa` | IAM role that a single Kubernetes service account can assume, with optional managed and inline policies |
 | `modules/observability` | Fargate log routing (Fluent Bit to CloudWatch), ADOT collector for Container Insights metrics, Managed Grafana workspace with a service account |
 | `modules/amg_dashboards` | CloudWatch data source and an "EKS Fargate overview" dashboard, defined in Terraform |
-| `envs/dev` | VPC, EKS and observability with dev-sized settings |
-| `envs/dev-dashboards` | Grafana data source and dashboard (second stack, see below) |
+| `envs/dev` | VPC, EKS and observability with dev-sized settings (2 AZs, one shared NAT gateway) |
+| `envs/prod` | Same modules with production settings: 3 AZs, a NAT gateway per AZ, API access restricted by validation, full control plane logging, longer retention |
+| `envs/dev-dashboards`, `envs/prod-dashboards` | Grafana data source and dashboard per environment (second stack, see below) |
 
 ## Quick start
 
@@ -56,14 +57,36 @@ terraform apply
 
 Open the Grafana endpoint, sign in with IAM Identity Center, and open **EKS Fargate overview**. Pod metrics can take a few minutes to appear. Pod logs appear in the CloudWatch log group `/aws/eks/<cluster>/fargate-logs` for pods in namespaces covered by a Fargate profile.
 
-### 3. Clean up
+### 3. Production
+
+`envs/prod` uses the same modules with different settings. Each environment has its own state, VPC CIDR (`10.20.0.0/16` for prod, `10.10.0.0/16` for dev) and cluster, so deploy them independently, and use a separate state key in `backend.tf`.
+
+```bash
+cd envs/prod
+cp terraform.tfvars.example terraform.tfvars   # api_access_cidrs must be specific ranges, not 0.0.0.0/0
+cp backend.tf.example backend.tf
+terraform init && terraform apply
+# then the dashboards, exactly as for dev, from envs/prod-dashboards
+```
+
+| Setting | dev | prod |
+| --- | --- | --- |
+| Availability zones | 2 | 3 |
+| NAT gateways | 1 shared | 1 per AZ |
+| API endpoint CIDRs | any list you set | validated: never `0.0.0.0/0` |
+| Control plane logs | api, audit, authenticator | all five types, 90 days |
+| App and metrics log retention | 14 days | 30 days |
+
+### 4. Clean up
 
 ```bash
 cd envs/dev-dashboards && terraform destroy
 cd ../dev && terraform destroy
 ```
 
-**Cost warning:** the EKS control plane and NAT gateway bill hourly. Managed Grafana bills per active user, Container Insights per custom metric, and CloudWatch for log ingestion and storage. Destroy the environment after testing.
+(Do the same in `envs/prod-dashboards` and `envs/prod` if you deployed prod.)
+
+**Cost warning:** the EKS control plane and NAT gateways bill hourly (prod runs one per AZ, so three). Managed Grafana bills per active user, Container Insights per custom metric, and CloudWatch for log ingestion and storage. Destroy the environment after testing.
 
 ## Using the IRSA module
 
@@ -93,8 +116,8 @@ Then annotate the Kubernetes service account with `eks.amazonaws.com/role-arn` s
 - **Built-in Fluent Bit for logs:** Fargate routes pod logs with no sidecar. The namespace label `aws-observability: enabled` and the `aws-logging` ConfigMap switch it on, and the pod execution role needs CloudWatch Logs permissions.
 - **Service-managed Grafana permissions:** AWS creates and scopes the workspace role for the CloudWatch data source, so there are no broad hand-written policies.
 - **Dashboards in a separate stack:** the Grafana provider needs a workspace URL and token that don't exist until the first stack is applied.
-- **Private subnets for pods, one NAT in dev:** only load balancers live in public subnets. `single_nat_gateway` trades resilience for cost.
-- **Restricted API endpoint:** `api_access_cidrs` has no default, so the public API is never open to the world by accident.
+- **Private subnets for pods; one NAT in dev, one per AZ in prod:** only load balancers live in public subnets. `single_nat_gateway` trades resilience for cost, and prod pays for the resilience.
+- **Restricted API endpoint:** `api_access_cidrs` has no default, and prod validates that it never contains `0.0.0.0/0`, so the public API is never open to the world by accident.
 
 ## Quality checks
 
@@ -102,7 +125,6 @@ GitHub Actions runs on every push and pull request: `terraform fmt`, `terraform 
 
 ## Roadmap
 
-- [ ] `envs/prod` (NAT per AZ, 3 AZs, tighter API access)
 - [ ] AWS Load Balancer Controller and ExternalDNS (Helm)
 - [ ] RDS PostgreSQL and EFS example
 - [ ] VPC flow logs and interface endpoints (ECR, Secrets Manager)

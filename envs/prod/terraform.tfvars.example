@@ -1,0 +1,6 @@
+# Copy to terraform.tfvars (git-ignored) and edit.
+# Prod must use specific CIDRs: 0.0.0.0/0 is rejected by validation.
+api_access_cidrs = ["203.0.113.10/32"] # your public IP or office/VPN range
+
+# IAM Identity Center user ID(s) that should be able to log in to Grafana.
+grafana_admin_user_ids = ["00000000-0000-0000-0000-000000000000"]
